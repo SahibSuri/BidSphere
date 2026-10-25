@@ -1,0 +1,119 @@
+erDiagram
+    USERS ||--o{ AUCTIONS : "creates (as seller)"
+    USERS ||--o{ BIDS : "places (as bidder)"
+    USERS ||--o{ WATCHLIST : "adds to"
+    USERS ||--o{ AUCTION_RESULTS : "wins"
+    USERS ||--o{ PAYMENTS : "submits"
+    USERS ||--o{ NOTIFICATIONS : "receives"
+
+    CATEGORIES ||--o{ AUCTIONS : "classifies"
+
+    AUCTIONS ||--o{ BIDS : "receives"
+    AUCTIONS ||--o{ WATCHLIST : "is bookmarked in"
+    AUCTIONS ||--o| AUCTION_RESULTS : "settles into (1-to-0..1)"
+    AUCTIONS ||--o{ NOTIFICATIONS : "references"
+
+    BIDS ||--o| AUCTION_RESULTS : "is winning bid"
+
+    AUCTION_RESULTS ||--o{ PAYMENTS : "paid via (1-to-0..many attempts, 1 success)"
+
+    USERS {
+        bigint user_id PK
+        varchar username UK
+        varchar email UK
+        varchar password_hash
+        varchar full_name
+        enum role "BUYER | SELLER | ADMIN"
+        varchar phone
+        text address
+        boolean is_active
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    CATEGORIES {
+        int category_id PK
+        varchar name UK
+        varchar description
+        varchar icon
+        timestamp created_at
+    }
+
+    AUCTIONS {
+        bigint auction_id PK
+        bigint seller_id FK
+        int category_id FK
+        varchar title
+        text description
+        decimal starting_price
+        decimal current_price
+        decimal bid_increment
+        enum status "SCHEDULED | ACTIVE | CLOSED | CANCELLED | UNSOLD"
+        datetime start_time
+        datetime end_time
+        varchar image_url
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    BIDS {
+        bigint bid_id PK
+        bigint auction_id FK
+        bigint bidder_id FK
+        decimal bid_amount
+        datetime bid_time
+        enum status "ACCEPTED | OUTBID | CANCELLED"
+        timestamp created_at
+    }
+
+    WATCHLIST {
+        bigint watchlist_id PK
+        bigint user_id FK
+        bigint auction_id FK
+        timestamp created_at
+    }
+
+    AUCTION_RESULTS {
+        bigint result_id PK
+        bigint auction_id FK, UK
+        bigint winner_id FK
+        bigint winning_bid_id FK
+        decimal final_price
+        datetime closed_at
+        enum result_status "WON | UNSOLD | CANCELLED"
+        timestamp created_at
+    }
+
+    PAYMENTS {
+        bigint payment_id PK
+        bigint result_id FK
+        bigint buyer_id FK
+        decimal amount
+        enum payment_method "SIMULATED_UPI | SIMULATED_NETBANKING | SIMULATED_CARD"
+        enum status "PENDING | SUCCESS | FAILED"
+        varchar transaction_reference UK
+        datetime paid_at
+        timestamp created_at
+    }
+
+    NOTIFICATIONS {
+        bigint notification_id PK
+        bigint user_id FK
+        bigint auction_id FK
+        varchar title
+        text message
+        boolean is_read
+        enum notification_type "BID_PLACED | OUTBID | AUCTION_WON | AUCTION_CLOSED | AUCTION_UNSOLD | PAYMENT_RECEIVED"
+        timestamp created_at
+    }
+
+    AUDIT_LOGS {
+        bigint log_id PK
+        varchar table_name
+        enum operation "INSERT | UPDATE | DELETE"
+        bigint record_id
+        varchar changed_by
+        json old_values
+        json new_values
+        timestamp action_timestamp
+    }

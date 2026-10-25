@@ -1,0 +1,46 @@
+graph TB
+    subgraph Client_Tier ["Client & Presentation Tier (Port: 8501)"]
+        UI["Streamlit Modern Web App"]
+        COMP["UI Components (Cards, Badges, KPIs)"]
+        VIEWS["Page Views (Marketplace, Bidding, Seller, Admin)"]
+        CLIENT["Centralized BidSphereAPIClient (HTTP / requests)"]
+        UI --> COMP
+        UI --> VIEWS
+        VIEWS --> CLIENT
+    end
+
+    subgraph API_Tier ["Application & Business Logic Tier (Port: 8000)"]
+        FASTAPI["FastAPI / Uvicorn ASGI Server"]
+        CORS["CORS & Error Sanitization Middleware"]
+        AUTH_MW["JWT & Argon2 Security Dependencies"]
+        ROUTERS["API Routers (/auth, /auctions, /bids, /watchlist, /payments, /admin)"]
+        SERVICES["Domain Services (AuctionService, BidService, AuthService)"]
+        FASTAPI --> CORS
+        CORS --> ROUTERS
+        ROUTERS --> AUTH_MW
+        ROUTERS --> SERVICES
+    end
+
+    subgraph Data_Tier ["Database & Persistence Tier (Port: 3306)"]
+        SQLALCHEMY["SQLAlchemy 2.0 ORM & Connection Pooling"]
+        PYMYSQL["PyMySQL Driver (utf8mb4)"]
+        MYSQL["MySQL 8.0+ Enterprise Database (bidsphere_db)"]
+        
+        subgraph DB_Objects ["MySQL 8.0 Database Objects"]
+            TABLES["9 Relational Tables (InnoDB Engine)"]
+            PROCEDURES["Stored Procedures (PlaceBid, CloseAuction with FOR UPDATE)"]
+            TRIGGERS["Event Triggers (Audit Logging, Payment Notifications)"]
+            VIEWS_SQL["Analytical Views (vw_active_auctions, vw_auction_bid_summary)"]
+        end
+
+        SERVICES --> SQLALCHEMY
+        SQLALCHEMY --> PYMYSQL
+        PYMYSQL --> MYSQL
+        MYSQL --> TABLES
+        MYSQL --> PROCEDURES
+        MYSQL --> TRIGGERS
+        MYSQL --> VIEWS_SQL
+    end
+
+    CLIENT -- "HTTP REST Requests (JSON / Bearer Token)" --> FASTAPI
+    ROUTERS -- "JSON Responses / Pydantic Schemas" --> CLIENT
